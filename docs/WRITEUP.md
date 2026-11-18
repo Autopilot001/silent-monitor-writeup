@@ -1,91 +1,119 @@
-# Silent Monitor — Notes to Myself
+# Silent Monitor — my room notes
 
-**Mohamed Nabil Algamoudi**  
-**TryHackMe room:** Silent Monitor — Junior Penetration Testing
+**Author:** Mohamed Nabil Algamoudi  
+**Room:** TryHackMe — Silent Monitor (Junior Penetration Testing)
 
-These are my notes from completing the room. I replaced the instance address with TARGET_IP because TryHackMe assigns a different address each time. I have left out every flag and password.
+These are my notes from completing the room. I used the TryHackMe target and AttackBox/VPN environment. I replaced the assigned target address with **TARGET_IP** so these commands can be read without publishing the address from my session. I have not included any flag values or passwords.
 
 ## 1. Start the target and connect
 
-I started the target machine and AttackBox, connected to the TryHackMe VPN, and copied the assigned address into my notes. Before running a command, replace TARGET_IP below with the address for the active instance.
+I started the target machine and AttackBox, connected to the TryHackMe VPN, and copied the assigned address into my notes. Before running a command, I replaced **TARGET_IP** below with the address for that active room instance.
 
-## 2. Enumerate all TCP ports
+![Silent Monitor portal landing page](../screenshots/step-01-portal.png)
 
-I ran a full TCP scan with service detection and the default scripts:
+## 2. Enumerate the target
 
-    sudo nmap -sC -sV -p- -Pn TARGET_IP
+I first scanned all TCP ports, then checked the detected services and default scripts:
 
-The scan showed SSH on port 22 and a Werkzeug web server on port 5050. The HTTP title identified the site as the CorpNet Network Operations Centre. My next step was to understand the web service before trying credentials elsewhere.
+~~~bash
+sudo nmap -sC -sV -p- -Pn TARGET_IP
+~~~
 
-## 3. Find the internal page
+The scan showed SSH on port 22 and a Werkzeug web server on port 5050. The HTTP title identified the site as the CorpNet Network Operations Centre.
 
-I used Gobuster against port 5050:
+I enumerated web paths on port 5050:
 
-    gobuster dir -u http://TARGET_IP:5050 -w /usr/share/wordlists/seclists/Discovery/Web-Content/big.txt
+~~~bash
+gobuster dir -u http://TARGET_IP:5050 -w /usr/share/wordlists/seclists/Discovery/Web-Content/big.txt
+~~~
 
-The scan found /internal with a 200 response. I opened the page and checked the login behavior. Invalid credentials returned an “Invalid username or password” message.
+The scan found /internal with a 200 response.
 
-I started down a Hydra route, but that was unnecessary. Note to myself: test the application behavior before spending time on password enumeration. I tried this username instead:
+## 3. Check the portal login
 
-    admin' OR 1=1--
+I opened the portal and checked the login behavior. An invalid attempt returned an “Invalid username or password” message. I started down a Hydra route, but that was unnecessary. Note to myself: test the application behavior before spending time on password enumeration.
 
-The login accepted it. That was the SQL injection foothold.
+![Portal sign-in page](../screenshots/step-02-login.png)
+
+![Portal response to an invalid login](../screenshots/step-03-login-response.png)
+
+After inspecting the login behavior, I tested this input:
+
+~~~text
+admin' OR 1=1--
+~~~
+
+The login accepted it. That gave me the SQL injection foothold. I then reviewed the authenticated portal and its audit information.
+
+![Authenticated portal audit view with network values redacted](../screenshots/step-06-portal-audit.png)
 
 ## 4. Follow the health-check clue
 
 After logging in, I checked /internal/health and the application logs. One log entry contained an encoded newline followed by whoami:
 
-    127.0.0.1%0awhoami
+~~~text
+127.0.0.1%0awhoami
+~~~
 
-The input did not behave the way I expected through the page. I intercepted and replayed the request in Burp Suite, where I got the diagnostic response I was looking for. I did not pin down why the browser request differed. Note to myself: compare the raw requests next time instead of guessing.
+The input did not behave the way I expected through the page. I intercepted and replayed the request in Burp Suite. I tested the health-check input with a ping version check:
 
-## 5. Confirm the diagnostic behavior
+~~~text
+ping -c 2 -W 1 127.0.0.1 -V
+~~~
 
-I tested the ping command with a version check:
+The response showed the iputils version. This confirmed that the health-check input reached command execution. Note to myself: compare the raw request and response when browser behavior is unclear.
 
-    ping -c 2 -W 1 127.0.0.1 -V
+![Burp health-check response; request details are redacted](../screenshots/step-04-health-check.png)
 
-The response showed iputils version 20211215. This confirmed that the health-check input reached command execution.
+## 5. Inspect the application files
 
-## 6. Inspect the application files
+I used the health-check behavior to inspect the application files. I found app.py and secret.config. The Python file was the backend; the configuration exposed the backup-agent account and showed that it ran as sysadmin. It also contained a password, which I have not copied into these notes.
 
-I listed the files and found app.py and secret.config. The Python file was the backend; secret.config exposed the backup-agent account and showed that it ran as sysadmin. The configuration also contained a password. I am not copying that password into this write-up.
+![Application source inspection; request details are redacted](../screenshots/step-05-source-inspection.png)
 
-## 7. Use the credentials over SSH
+## 6. Use the recovered account over SSH
 
-I tried the recovered sysadmin credentials against the SSH service:
+I tried the recovered sysadmin credentials against SSH:
 
-    ssh sysadmin@TARGET_IP
+~~~bash
+ssh sysadmin@TARGET_IP
+~~~
 
-SSH accepted them and gave me a shell on the target. I used the address and host-key prompt shown by my own active room instance.
+SSH accepted them and gave me a shell on the target. I used the address and host-key prompt shown by my active room instance.
 
-## 8. Check the account and backup directory
+## 7. Check permissions and backups
 
-I checked sudo permissions:
+I checked the account’s sudo permissions:
 
-    sudo -l
+~~~bash
+sudo -l
+~~~
 
-sysadmin could not run sudo. I listed the home directory and found backups and user.txt. Inside backups were README.txt and infrastructure.kdbx.
+The account could not run sudo. I listed the home directory and found backups and user.txt. Inside backups were README.txt and infrastructure.kdbx.
 
-## 9. Work through the KeePass database
+## 8. Work through the KeePass database
 
-I used keepass4crack.py (credited to unix-ninja) to recover the KeePass database password. I am leaving the recovered password out of these notes. Using the database information, I completed the final escalation, obtained root access, and checked /root/root.txt to confirm completion. I have not included any flag values.
+I used keepass4crack.py (credited to unix-ninja) to recover the KeePass database password. I have removed the recovered password and account details from the public screenshot and left the password out of these notes.
 
-## What I would remember next time
+![KeePass recovery output with credential details redacted](../screenshots/step-07-keepass.png)
+
+Using the database information, I completed the final escalation, obtained root access, and checked /root/root.txt to confirm completion. I have not included any flag values.
+
+![Root flag file check; terminal identity is redacted and no flag value is shown](../screenshots/step-08-root-check.png)
+
+## 9. Review HTTP objects in Wireshark
+
+I used Wireshark’s **File → Export Objects → HTTP** menu while reviewing the captured traffic. The screenshot keeps the menu path visible and covers the packet details that could identify addresses.
+
+![Wireshark HTTP object export menu](../screenshots/step-09-wireshark-export.png)
+
+## Notes to myself
 
 - Skip Hydra for this room; the login input test exposed the useful weakness sooner.
-- Keep the Burp request and response when the browser behavior is unclear.
-- Treat configuration files and backup databases as sensitive; do not copy recovered secrets into a public write-up.
-- Use TARGET_IP only as a placeholder. Get the real address from the current TryHackMe instance.
+- Keep the Burp request and response when browser behavior is unclear.
+- Treat configuration files and backup databases as sensitive. Do not copy recovered secrets into a public write-up.
+- Replace **TARGET_IP** with the address assigned to the current TryHackMe instance.
 
 ## Remediation notes
 
 The login should use parameterized queries. The health-check should not pass user input to a shell. Service credentials should be kept out of configuration files, rotated if exposed, and restricted to the access the account needs. Backup databases should be protected with strong, unique credentials.
-
-## Screenshots
-
-I have not added screenshots to this copy. I will add captures from my own run when available, with the target address, passwords, and flags removed.
-
----
-
-Mohamed Nabil Algamoudi
