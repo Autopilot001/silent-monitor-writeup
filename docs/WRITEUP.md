@@ -109,10 +109,10 @@ I used Wireshark’s **File → Export Objects → HTTP** menu while reviewing t
 
 ## Notes to myself
 
-- Skip Hydra for this room; the login input test exposed the useful weakness sooner.
-- Keep the Burp request and response when browser behavior is unclear.
-- Treat configuration files and backup databases as sensitive. Do not copy recovered secrets into a public write-up.
-- Replace **TARGET_IP** with the address assigned to the current TryHackMe instance.
+Skip Hydra for this room; the login input test exposed the useful weakness sooner.
+Keep the Burp request and response when browser behavior is unclear.
+Treat configuration files and backup databases as sensitive. Do not copy recovered secrets into a public write-up.
+Replace **TARGET_IP** with the address assigned to the current TryHackMe instance.
 
 ## Remediation notes
 
