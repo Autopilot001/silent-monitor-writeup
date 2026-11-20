@@ -1,4 +1,4 @@
-# Silent Monitor — my room notes
+# Silent Monitor my room notes
 
 **Author:** Mohamed Nabil Algamoudi  
 **Room:** TryHackMe  Silent Monitor (Junior Penetration Testing)
