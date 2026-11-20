@@ -1,4 +1,4 @@
-# Silent Monitor — My TryHackMe Notes
+# Silent Monitor  My TryHackMe Notes
 
 **Mohamed Nabil**  
 **Room:** Silent Monitor — Junior Penetration Testing
