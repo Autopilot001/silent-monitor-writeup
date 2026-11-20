@@ -1,7 +1,7 @@
 # Silent Monitor  My TryHackMe Notes
 
 **Mohamed Nabil**  
-**Room:** Silent Monitor — Junior Penetration Testing
+**Room:** Silent Monitor  Junior Penetration Testing
 
 I wrote these notes to keep a clear record of how I worked through the room. The path was service enumeration, the web login, the internal health page, SSH, and the KeePass backup database.
 
