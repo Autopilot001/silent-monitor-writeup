@@ -1,7 +1,7 @@
 # Silent Monitor — my room notes
 
 **Author:** Mohamed Nabil Algamoudi  
-**Room:** TryHackMe — Silent Monitor (Junior Penetration Testing)
+**Room:** TryHackMe  Silent Monitor (Junior Penetration Testing)
 
 These are my notes from completing the room. I used the TryHackMe target and AttackBox/VPN environment. I replaced the assigned target address with **TARGET_IP** so these commands can be read without publishing the address from my session. I have not included any flag values or passwords.
 
@@ -67,7 +67,7 @@ The response showed the iputils version. This confirmed that the health-check in
 
 ## 5. Inspect the application files
 
-I used the health-check behavior to inspect the application files. I found app.py and secret.config. The Python file was the backend; the configuration exposed the backup-agent account and showed that it ran as sysadmin. It also contained a password, which I have not copied into these notes.
+I used the healthcheck behavior to inspect the application files. I found app.py and secret.config. The Python file was the backend; the configuration exposed the backupagent account and showed that it ran as sysadmin. It also contained a password, which I have not copied into these notes.
 
 ![Application source inspection; request details are redacted](../screenshots/step-05-source-inspection.png)
 
@@ -79,7 +79,7 @@ I tried the recovered sysadmin credentials against SSH:
 ssh sysadmin@TARGET_IP
 ~~~
 
-SSH accepted them and gave me a shell on the target. I used the address and host-key prompt shown by my active room instance.
+SSH accepted them and gave me a shell on the target. I used the address and hostkey prompt shown by my active room instance.
 
 ## 7. Check permissions and backups
 
@@ -109,9 +109,9 @@ I used Wireshark’s **File → Export Objects → HTTP** menu while reviewing t
 
 ## Notes to myself
 
-Skip Hydra for this room; the login input test exposed the useful weakness sooner.
+Skip Hydra for this room the login input test exposed the useful weakness sooner.
 Keep the Burp request and response when browser behavior is unclear.
-Treat configuration files and backup databases as sensitive. Do not copy recovered secrets into a public write-up.
+Treat configuration files and backup databases as sensitive. Do not copy recovered secrets into a public writeup.
 Replace **TARGET_IP** with the address assigned to the current TryHackMe instance.
 
 ## Remediation notes
